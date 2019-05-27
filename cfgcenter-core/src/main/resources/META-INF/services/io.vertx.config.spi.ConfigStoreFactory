@@ -1,0 +1,4 @@
+roman.common.cfgcenter.spi.EventBusPullConfigtoreFactory
+roman.common.cfgcenter.spi.ClassPathConfigtoreFactory
+roman.common.cfgcenter.spi.JdbcConfigtoreFactory
+roman.common.cfgcenter.spi.URIConfigtoreFactory
