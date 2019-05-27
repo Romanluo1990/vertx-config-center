@@ -28,7 +28,7 @@ class LocalPropertyHolder implements PropertyHolder  {
                 if(localProperties == null){
                     localProperties = new Properties();
                     InputStream inputStream = null;
-                    String uriPath = PropertyHolder.SYS_PROPERTY_HOLDER.getValue("applation.property.uri");
+                    String uriPath = PropertyHolder.SYS_PROPERTY_HOLDER.getValue("cfgcenter.property.uri");
                     if(uriPath != null){
                         URI uri = URI.create(uriPath);
                         String scheme = uri.getScheme();
