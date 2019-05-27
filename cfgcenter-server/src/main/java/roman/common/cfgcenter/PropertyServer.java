@@ -49,11 +49,11 @@ public class PropertyServer {
     }
 
     public void publishProperty(){
-        domainPropertyMap.forEach(this::publishProperty);
+        domainPropertyMap.forEach(this::eventBusPush);
     }
 
-    public void publishProperty(String domain, Map<String, String> properties){
-        eventBusPush(domain, properties);
+    public void publishProperty(String domain){
+        eventBusPush(domain, domainPropertyMap.get(domain));
     }
 
     private void internalUpdateProperty(String domain, Map<String, String> properties){
@@ -120,6 +120,11 @@ public class PropertyServer {
         });
     }
 
+    /**
+     * 发布配置到客户端
+     * @param domain
+     * @param properties
+     */
     private void eventBusPush(String domain, Map<String, String> properties) {
         JsonObject confg = new JsonObject();
         properties.forEach(confg::put);
@@ -130,6 +135,9 @@ public class PropertyServer {
         vertx.eventBus().publish(domain + "-config-push", confg);
     }
 
+    /**
+     * 服务端更新同步
+     */
     private void initSync() {
         vertx.eventBus().<JsonObject>consumer(EnvUtils.getDomain() + "-config-sync", msg -> {
             msg.address();

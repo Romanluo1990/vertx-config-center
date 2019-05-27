@@ -33,4 +33,12 @@ public class ConfigFacade {
     public List<Config> list(Config config) {
         return configDao.select(config);
     }
+
+    public void publishAll() {
+        propertyServer.publishProperty();
+    }
+
+    public void publish(String domain) {
+        propertyServer.publishProperty(domain);
+    }
 }
