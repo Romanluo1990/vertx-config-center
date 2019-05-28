@@ -79,6 +79,6 @@ curl -X POST --header 'Content-Type: application/json' --header 'Accept: */*' -d
  }' 'http://localhost:8080/config'
  
 客户端日志输出结果：  
-2019-05-28 17:48:47.347 INFO  roman.common.cfgcenter.client.PropertyManagerTest Line:18  - white_list: 张三
-2019-05-28 17:48:48.503 INFO  roman.common.cfgcenter.client.PropertyManagerTest Line:14  - property white_list update to: 张三，李四
+2019-05-28 17:48:47.347 INFO  roman.common.cfgcenter.client.PropertyManagerTest Line:18  - white_list: 张三  
+2019-05-28 17:48:48.503 INFO  roman.common.cfgcenter.client.PropertyManagerTest Line:14  - property white_list update to: 张三，李四  
 2019-05-28 17:48:50.351 INFO  roman.common.cfgcenter.client.PropertyManagerTest Line:18  - white_list: 张三，李四
