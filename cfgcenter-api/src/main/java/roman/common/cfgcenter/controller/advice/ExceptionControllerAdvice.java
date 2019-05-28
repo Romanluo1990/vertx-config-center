@@ -19,7 +19,7 @@ import javax.servlet.http.HttpServletRequest;
  * 参考 springboot Error Handling
  */
 @Slf4j
-@ControllerAdvice(basePackages = {"com.vip.wpc.admin.roman.common.cfgcenter.controller"})
+@ControllerAdvice(basePackages = {"roman.common.cfgcenter.controller.ConfigController"})
 public class ExceptionControllerAdvice extends ResponseEntityExceptionHandler {
 
 
