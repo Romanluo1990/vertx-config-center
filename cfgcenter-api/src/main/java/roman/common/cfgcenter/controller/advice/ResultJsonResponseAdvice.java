@@ -17,7 +17,7 @@ import java.util.HashMap;
  * 统一json返回处理
  */
 @Slf4j
-@ControllerAdvice(basePackages = "roman.common.cfgcenter.roman.common.cfgcenter.controller")
+@ControllerAdvice(basePackages = "roman.common.cfgcenter.controller")
 public class ResultJsonResponseAdvice implements ResponseBodyAdvice {
 
 	@Override
