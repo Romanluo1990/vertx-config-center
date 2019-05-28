@@ -42,6 +42,12 @@
             <artifactId>vertx-jdbc-client</artifactId>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/net.sourceforge.jchardet/jchardet -->
+        <dependency>
+            <groupId>net.sourceforge.jchardet</groupId>
+            <artifactId>jchardet</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>

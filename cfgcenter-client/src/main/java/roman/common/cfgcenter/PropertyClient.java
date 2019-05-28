@@ -81,7 +81,6 @@ public class PropertyClient {
                 .setOptional(true)
                 .setFormat("encode-properties")
                 .setConfig(new JsonObject()
-                        .put("charset", EnvUtils.getPropertyCharset())
                         .put("uri", uri)
                         .put("raw-data", true)
                 );

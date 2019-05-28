@@ -20,7 +20,7 @@ public class DataSourceConfig {
 	static final String PACKAGE = "roman.common.cfgcenter.dao.repository";
 
 	@Bean(name = "dataSource")
-	@ConfigurationProperties(prefix = "vertx.datasource.hikari")
+	@ConfigurationProperties(prefix = "datasource.hikari")
 	public DataSource druid() {
 		return new HikariDataSource();
 	}

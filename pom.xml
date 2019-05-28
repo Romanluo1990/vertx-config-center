@@ -119,6 +119,13 @@
                 <version>27.1-jre</version>
             </dependency>
 
+            <!-- https://mvnrepository.com/artifact/net.sourceforge.jchardet/jchardet -->
+            <dependency>
+                <groupId>net.sourceforge.jchardet</groupId>
+                <artifactId>jchardet</artifactId>
+                <version>1.0</version>
+            </dependency>
+
         </dependencies>
 
     </dependencyManagement>

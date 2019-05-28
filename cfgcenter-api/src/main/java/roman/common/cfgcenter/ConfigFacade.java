@@ -1,9 +1,11 @@
 package roman.common.cfgcenter;
 
+import io.vertx.config.ConfigStoreOptions;
 import org.springframework.stereotype.Service;
 import roman.common.cfgcenter.dao.ConfigDao;
 import roman.common.cfgcenter.entity.Config;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.List;
 
@@ -16,7 +18,11 @@ public class ConfigFacade {
     private PropertyServer propertyServer;
 
     public ConfigFacade() {
-        this.propertyServer = new PropertyServer();
+        ConfigStoreOptions sqlStore = new ConfigStoreOptions()
+                .setType("jdbc")
+                .setFormat("raw")
+                .setConfig(new HikariConfigStoreConfig());
+        this.propertyServer = new PropertyServer(sqlStore);
     }
 
     public Config saveOrUpdate(Config config) {
@@ -26,7 +32,7 @@ public class ConfigFacade {
             configDao.updateByIdSelective(config);
         }
         Config newConfig = configDao.getById(config.getId());
-        propertyServer.updateProperty(newConfig.getDomain(), newConfig.getKey(), newConfig.getValue());
+        propertyServer.publishProperty(newConfig.getDomain(), newConfig.getKey());
         return config;
     }
 
@@ -40,5 +46,10 @@ public class ConfigFacade {
 
     public void publish(String domain) {
         propertyServer.publishProperty(domain);
+    }
+
+    @PostConstruct
+    private void init(){
+        publishAll();
     }
 }

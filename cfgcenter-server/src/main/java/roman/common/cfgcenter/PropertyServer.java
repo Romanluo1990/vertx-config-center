@@ -3,6 +3,7 @@ package roman.common.cfgcenter;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -10,97 +11,85 @@ import lombok.extern.slf4j.Slf4j;
 import roman.common.cfgcenter.spi.EventBusPullConfigtoreFactory;
 import roman.common.cfgcenter.util.EnvUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.function.Consumer;
 
 @Slf4j
 public class PropertyServer {
 
-    private static final String JDBC_STORE_PROVIDERCLASS = "jdbc.store.providerClass";
+    private static final String FORMAT = "raw";
 
-    private static final String JDBC_STORE_SQL = "jdbc.store.sql";
+    private static final String RAW_KEY = "configs";
 
-    private Map<String, Map<String, String>> domainPropertyMap = new ConcurrentHashMap<>();
+    private static final String RAW_TYPE = "json-array";
 
     private Vertx vertx;
 
-    public PropertyServer() {
+    private ConfigRetriever retriever;
+
+    public PropertyServer(ConfigStoreOptions...  configStoreOptions) {
         vertx = VertxFactory.getVertx();
-        ConfigRetrieverOptions options = getConfigRetrieverOptions();
-        ConfigRetriever retriever = ConfigRetriever.create(vertx, options);
-        initProperty(retriever);
+        ConfigRetrieverOptions options = getConfigRetrieverOptions(configStoreOptions);
+        retriever = ConfigRetriever.create(vertx, options);
         initPullReply();
-        initSync();
-    }
-
-    public void updateProperty(String domain, String key, String value){
-        Map<String, String> properties = new HashMap<>();
-        properties.put(key, value);
-        updateProperty(domain, properties);
-    }
-
-    public void updateProperty(String domain, Map<String, String> properties){
-        internalUpdateProperty(domain, properties);
-        eventBusPush(domain, properties);
     }
 
     public void publishProperty(){
-        domainPropertyMap.forEach(this::eventBusPush);
+        Handler<Map<String, JsonObject>> handler = domainProperties -> {
+            domainProperties.forEach(this::eventBusPush);
+        };
+        internalPublishProperty(handler);
     }
 
     public void publishProperty(String domain){
-        eventBusPush(domain, domainPropertyMap.get(domain));
+        Handler<Map<String, JsonObject>> handler = domainProperties -> {
+            JsonObject jsonObject = domainProperties.get(domain);
+            if(Objects.nonNull(jsonObject))
+                eventBusPush(domain, jsonObject);
+        };
+        internalPublishProperty(handler);
     }
 
-    private void internalUpdateProperty(String domain, Map<String, String> properties){
-        domainPropertyMap.compute(domain, (key, value) -> {
-            if(value == null){
-                value = new ConcurrentHashMap<>();
-            }
-            value.putAll(properties);
-            return value;
-        });
+    public void publishProperty(String domain, String key){
+        Handler<Map<String, JsonObject>> handler = domainProperties -> {
+            String value = domainProperties.get(domain).getString(key);
+            if(Objects.nonNull(value))
+                eventBusPush(domain, new JsonObject().put(key, value));
+        };
+        internalPublishProperty(handler);
     }
 
-    private void internalUpdateProperty(String domain, JsonObject jsonObject) {
-        Map<String, String> properties = new HashMap<>();
-        jsonObject.getMap().forEach((key, value) -> properties.put(key, Objects.toString(value)));
-        internalUpdateProperty(domain, properties);
-    }
-
-    private void initProperty(ConfigRetriever retriever) {
+    private void internalPublishProperty(Handler<Map<String, JsonObject>> handler){
         retriever.getConfig(ar -> {
             if(ar.succeeded()){
                 JsonObject conf = ar.result();
-                JsonArray resultSet = conf.getJsonArray("ResultSet");
-                Map<String, List<JsonObject>> domains = resultSet.stream()
+                JsonArray resultSet = conf.getJsonArray(RAW_KEY);
+                Map<String, JsonObject> domainProperties = new HashMap<>();
+                Consumer<JsonObject> rowConsumer = row -> {
+                    String domain = row.getString("domain");
+                    String key = row.getString("key");
+                    String value = row.getString("value");
+                    domainProperties.compute(domain, (domainKey, confJsonObject) -> {
+                        if(confJsonObject == null)
+                            confJsonObject = new JsonObject();
+                        return confJsonObject;
+                    })
+                    .put(key, value);
+                };
+                resultSet.stream()
                         .map(row -> (JsonObject)row)
-                        .collect(Collectors.groupingBy(row -> row.getString("domain")));
-                domains.forEach((domain, confs) -> {
-                    Map<String, String> propertyMap = new HashMap<>();
-                    confs.forEach(property ->  propertyMap.put(property.getString("key"), property.getString("value")));
-                    updateProperty(domain, propertyMap);
-                });
+                        .forEach(rowConsumer);
+                handler.handle(domainProperties);
             }
         });
     }
 
-    private ConfigRetrieverOptions getConfigRetrieverOptions() {
+    private ConfigRetrieverOptions getConfigRetrieverOptions(ConfigStoreOptions[] configStoreOptions) {
         ConfigRetrieverOptions configRetrieverOptions = new ConfigRetrieverOptions();
-        ConfigStoreOptions jdbcStore = new ConfigStoreOptions()
-                .setType("jdbc")
-                .setFormat("raw")
-                .setConfig(new JsonObject()
-                        .put("provider_class", PropertyManager.getString(JDBC_STORE_PROVIDERCLASS))
-                        .put("sql", PropertyManager.getString(JDBC_STORE_SQL))
-                        .put("raw.key", "ResultSet")
-                        .put("raw.type", "json-array")
-                        .mergeIn(new HikariCPDataSourceConfig()));
-        configRetrieverOptions.addStore(jdbcStore);
+        Arrays.stream(configStoreOptions)
+                .peek(options -> options.setFormat(FORMAT))
+                .peek(options -> options.getConfig().put("raw.key", RAW_KEY).put("raw.type", RAW_TYPE))
+                .forEach(configRetrieverOptions::addStore);
         return configRetrieverOptions;
     }
 
@@ -111,40 +100,25 @@ public class PropertyServer {
         }
         vertx.eventBus().<String>consumer(address, msg -> {
             String domain = msg.body();
-            Map<String, String> properties = domainPropertyMap.get(domain);
-            JsonObject confg = new JsonObject();
-            if(Objects.nonNull(properties)){
-                properties.forEach(confg::put);
-            }
-            msg.reply(confg);
+            Handler<Map<String, JsonObject>> handler = domainPropertyMap -> {
+                JsonObject jsonObject = domainPropertyMap.get(domain);
+                if(Objects.nonNull(jsonObject))
+                    msg.reply(jsonObject);
+                else
+                    msg.fail(500, "无配置项");
+            };
+            internalPublishProperty(handler);
         });
     }
 
     /**
      * 发布配置到客户端
      * @param domain
-     * @param properties
+     * @param confg
      */
-    private void eventBusPush(String domain, Map<String, String> properties) {
-        JsonObject confg = new JsonObject();
-        properties.forEach(confg::put);
-        vertx.eventBus().publish(EnvUtils.getDomain() + "-config-sync",
-                new JsonObject()
-                        .put("domain", domain)
-                        .put("confg", confg));
+    private void eventBusPush(String domain, JsonObject confg) {
         vertx.eventBus().publish(domain + "-config-push", confg);
     }
 
-    /**
-     * 服务端更新同步
-     */
-    private void initSync() {
-        vertx.eventBus().<JsonObject>consumer(EnvUtils.getDomain() + "-config-sync", msg -> {
-            msg.address();
-            JsonObject msgBody = msg.body();
-            String domain = msgBody.getString("domain");
-            JsonObject confg = msgBody.getJsonObject("confg");
-            internalUpdateProperty(domain, confg);
-        });
-    }
+
 }

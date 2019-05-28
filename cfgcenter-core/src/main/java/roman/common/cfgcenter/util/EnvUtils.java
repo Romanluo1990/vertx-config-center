@@ -11,8 +11,6 @@ public class EnvUtils {
 
     private static final String CFGCENTER_PROPERTY_URI_KEY = "cfgcenter.property.uri";
 
-    private static final String CFGCENTER_PROPERTY_CHARSET_KEY = "cfgcenter.property.charset";
-
     private static final String CFGCENTER_ZOO_KEY = "cfgcenter.zoo";
 
     private static final String CFGCENTER_EVENT_BUS_PULL_ADDRESS_KEY = "cfgcenter.eventBusPull.address";
@@ -20,8 +18,6 @@ public class EnvUtils {
     private static final String DEFAULT_URI = "classpath:application.properties";
 
     private static final String DEFAULT_EVENT_BUS_PULL_ADDRESS = "event-bus-pull";
-
-    private static final String DEFAULT_PROPERTY_CHARSET = "UTF-8";
 
     private static List<PropertyHolder> propertyHolderChain = new LinkedList<>();
 
@@ -66,10 +62,4 @@ public class EnvUtils {
         return getValue(CFGCENTER_ZOO_KEY);
     }
 
-    public static String getPropertyCharset() {
-        String charset = getValue(CFGCENTER_PROPERTY_CHARSET_KEY);
-        if(charset == null)
-            charset = DEFAULT_PROPERTY_CHARSET;
-        return charset;
-    }
 }

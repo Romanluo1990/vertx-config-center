@@ -8,26 +8,38 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-class HikariCPDataSourceConfig extends JsonObject {
+class HikariConfigStoreConfig extends JsonObject {
 
-    private static final String PREFIX = "vertx.datasource.hikari.";
+    private static final String PREFIX = "datasource.hikari.";
 
-    private static final String[] KEYS = {"dataSourceClassName", "jdbcUrl", "username",
+    private static final String[] KEYS = {"provider_class","sql","dataSourceClassName", "jdbcUrl", "username",
             "password", "autoCommit", "connectionTimeout", "idleTimeout", "maxLifetime",
             "connectionTestQuery", "minimumIdle", "maximumPoolSize",
             "poolName", "initializationFailFast", "isolationInternalQueries",
             "allowPoolSuspension", "readOnly", "registerMBeans", "catalog", "connectionInitSql",
             "driverClassName", "transactionIsolation", "validationTimeout", "leakDetectionThreshold"};
 
-    HikariCPDataSourceConfig() {
+    HikariConfigStoreConfig() {
         Map<String, String> propertyMap = PropertyManager.getPropertyMap();
+        initDefaultProperties();
         Arrays.stream(KEYS)
-                .filter(key -> Objects.nonNull(propertyMap.get(PREFIX + key)))
                 .forEach(key ->  putValueFun.apply(propertyMap).accept(key));
+    }
+
+    private void initDefaultProperties() {
+        put("provider_class", "io.vertx.ext.jdbc.spi.impl.HikariCPDataSourceProvider");
+        String sql = PropertyManager.getString("jdbc.store.sql");
+        if(Objects.isNull(sql)){
+            put("sql", "select `domain`,`key`,`value` from `config`");
+        }else{
+            put("sql", sql);
+        }
     }
 
     private Function<Map<String, String>, Consumer<String>> putValueFun = propertyMap -> key -> {
         String value = propertyMap.get(PREFIX + key);
+        if(Objects.isNull(value))
+            return;
         switch (key) {
             case "dataSourceClassName":
                 put(key, value);

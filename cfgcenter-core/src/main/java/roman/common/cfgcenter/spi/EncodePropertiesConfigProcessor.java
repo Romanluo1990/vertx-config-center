@@ -8,6 +8,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import roman.common.cfgcenter.util.CharsetDetector;
 
 import java.io.*;
 import java.util.List;
@@ -33,13 +34,13 @@ public class EncodePropertiesConfigProcessor implements ConfigProcessor {
     public void process(Vertx vertx, JsonObject configuration, Buffer input, Handler<AsyncResult<JsonObject>> handler) {
         Boolean hierarchicalData = configuration.getBoolean("hierarchical", false);
         PropertiesReader reader = hierarchicalData ? HIERARCHICAL_READER : FLAT_READER;
-        // I'm not sure the executeBlocking is really required here as the
-        // buffer is in memory,
-        // so the input stream is not blocking
         vertx.executeBlocking(future -> {
             byte[] bytes = input.getBytes();
             ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
             try {
+                String charset = CharsetDetector.detectCharset(stream);
+                configuration.put("charset", charset);
+                stream.reset();
                 JsonObject created = reader.readAsJson(configuration, stream);
                 future.complete(created);
             } catch (Exception e) {
