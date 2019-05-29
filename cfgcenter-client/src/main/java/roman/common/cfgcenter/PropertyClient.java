@@ -65,7 +65,7 @@ public class PropertyClient {
             ConfigStoreOptions ebGetStore = new ConfigStoreOptions()
                     .setType("event-bus-pull")
                     .setFormat("json")
-                    .setOptional(!vertx.isClustered())
+                    .setOptional(true)
                     .setConfig(new JsonObject()
                             .put("address", EnvUtils.getEventBusPullAddress())
                             .put("domain", domain)
