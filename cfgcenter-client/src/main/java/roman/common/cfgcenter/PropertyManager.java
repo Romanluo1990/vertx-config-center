@@ -54,6 +54,10 @@ public class PropertyManager {
         return Boolean.parseBoolean(getString(key));
     }
 
+    public static void register(String key, PropertyListener propertyListener) {
+        PopertyManagerHolder.single.register(new KeyMatchPropertyListener(key, propertyListener));
+    }
+
     public static void register(PropertyListener propertyListener) {
         PopertyManagerHolder.single.register(propertyListener);
     }
