@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 public class PropertyManager {
@@ -55,7 +56,7 @@ public class PropertyManager {
     }
 
     public static void register(String key, PropertyListener propertyListener) {
-        PopertyManagerHolder.single.register(new KeyMatchPropertyListener(key, propertyListener));
+        PopertyManagerHolder.single.register(new KeyMatchPropertyListener(propertyName -> Objects.equals(key, propertyName), propertyListener));
     }
 
     public static void register(PropertyListener propertyListener) {
