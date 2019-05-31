@@ -34,6 +34,11 @@ public class DataSourceConfig {
 			"allowPoolSuspension", "readOnly", "registerMBeans", "catalog", "connectionInitSql",
 			"driverClassName", "transactionIsolation", "validationTimeout", "leakDetectionThreshold"};
 
+	/**
+	 * 可动态修改DataSource，
+	 * 配置中心修改dataSource属性后（比如最大连接数，超时时间）使用新配置datasource
+	 * @return
+	 */
 	@Bean(name = "dataSource")
 	public DataSource dataSource() {
 		DataSource dataSource = createDataSource();
