@@ -90,6 +90,7 @@ public class PropertyServer {
                 .peek(options -> options.setFormat(FORMAT))
                 .peek(options -> options.getConfig().put("raw.key", RAW_KEY).put("raw.type", RAW_TYPE))
                 .forEach(configRetrieverOptions::addStore);
+        configRetrieverOptions.setScanPeriod(-1);
         return configRetrieverOptions;
     }
 
